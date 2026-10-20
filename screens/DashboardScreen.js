@@ -8,6 +8,7 @@ import {
   Linking,
   Alert,
   Image,
+  ToastAndroid, // 🚨 INJECTED: Native Android toast module
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NativeModules} from 'react-native';
@@ -113,6 +114,19 @@ export default function DashboardScreen({navigation}) {
             navigation.navigate('AddLink', {
               editLink: item,
               onSave: updatedLink => {
+                // 🚨 DUPLICATION CHECK FOR EDIT WORKFLOW
+                const isDuplicate = links.some(
+                  link =>
+                    link.id !== updatedLink.id && 
+                    (link.title.toLowerCase() === updatedLink.title.toLowerCase() ||
+                     link.url.toLowerCase() === updatedLink.url.toLowerCase())
+                );
+
+                if (isDuplicate) {
+                  ToastAndroid.show('Same name ya link pehle se exist karta hai!', ToastAndroid.LONG);
+                  return; // Blocks execution completely
+                }
+
                 const updatedLinks = links.map(link =>
                   link.id === updatedLink.id ? updatedLink : link,
                 );
@@ -150,7 +164,6 @@ export default function DashboardScreen({navigation}) {
 
   return (
     <View style={styles.container}>
-      {/* REBRANDED: Replaced Study Launcher with Zurl */}
       <Text style={styles.title}>Zurl</Text>
 
       <TouchableOpacity
@@ -158,6 +171,18 @@ export default function DashboardScreen({navigation}) {
         onPress={() =>
           navigation.navigate('AddLink', {
             onSave: newLink => {
+              // 🚨 DUPLICATION CHECK FOR ADDING NEW LINK WORKFLOW
+              const isDuplicate = links.some(
+                link =>
+                  link.title.toLowerCase() === newLink.title.toLowerCase() ||
+                  link.url.toLowerCase() === newLink.url.toLowerCase()
+              );
+
+              if (isDuplicate) {
+                ToastAndroid.show('Link or Title already exists', ToastAndroid.LONG);
+                return; // Rejects entry insertion stream
+              }
+
               const updatedLinks = [...links, newLink];
               setLinks(updatedLinks);
               saveLinks(updatedLinks);
@@ -188,7 +213,6 @@ export default function DashboardScreen({navigation}) {
               />
               <Text style={styles.cardTitle}>{item.title}</Text>
             </View>
-            {/* CLEANED: Removed the subtitle domain text from here completely */}
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -210,7 +234,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 20,
-    letterSpacing: 0.5, // Sleek brand tracking look
+    letterSpacing: 0.5,
   },
   addButton: {
     backgroundColor: '#4F46E5',
@@ -225,7 +249,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   card: {
-    paddingVertical: 20, // Slightly improved padding balance since subtitle is gone
+    paddingVertical: 20,
     paddingHorizontal: 18,
     borderRadius: 16,
     marginBottom: 14,

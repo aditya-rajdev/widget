@@ -33,23 +33,33 @@ class ThreeCellWidgetProvider : AppWidgetProvider() {
                 else -> R.drawable.link
             }
 
-            val bgColor = when {
-                lowerUrl.contains("youtube") || lowerUrl.contains("youtu.be") -> android.graphics.Color.parseColor("#de0000")
-                lowerUrl.contains("github") -> android.graphics.Color.parseColor("#000000")
-                lowerUrl.contains("linkedin") -> android.graphics.Color.parseColor("#006de1")
-                lowerUrl.contains("leetcode") -> android.graphics.Color.parseColor("#ec9c08")
-                lowerUrl.contains("instagram") -> android.graphics.Color.parseColor("#df088d")
-                else -> android.graphics.Color.parseColor("#1A1A1A")
+            // 🚨 INTEGRATED: Custom Color Picker Check with Fallback System
+            val customColorStr = prefs.getString("widget_custom_color_$appWidgetId", null)
+
+            val bgColor = if (!customColorStr.isNullOrBlank()) {
+                // User ne setting screen se manual aesthetics select kiya hai (e.g. Matte Black)
+                android.graphics.Color.parseColor(customColorStr)
+            } else {
+                // FALLBACK: Default branding logic agar user "Auto" standard mode par hai
+                when {
+                    lowerUrl.contains("youtube") || lowerUrl.contains("youtu.be") -> android.graphics.Color.parseColor("#de0000")
+                    lowerUrl.contains("github") -> android.graphics.Color.parseColor("#000000")
+                    lowerUrl.contains("linkedin") -> android.graphics.Color.parseColor("#006de1")
+                    lowerUrl.contains("leetcode") -> android.graphics.Color.parseColor("#ec9c08")
+                    lowerUrl.contains("instagram") -> android.graphics.Color.parseColor("#df088d")
+                    else -> android.graphics.Color.parseColor("#1A1A1A")
+                }
             }
 
             views.setImageViewResource(R.id.threeCellWidgetIcon, iconRes)
             // SAFEGUARD: Clear any hidden solid backgrounds under the vector icon frame
             views.setInt(R.id.threeCellWidgetIcon, "setBackgroundColor", android.graphics.Color.TRANSPARENT)
+            
+            // Layout core background setting apply block using dynamic calculated token
             views.setInt(R.id.threeCellWidgetRoot, "setBackgroundColor", bgColor)
 
             if (url.isNotBlank()) {
                 val clickIntent = Intent(context, LinkClickReceiver::class.java).apply {
-                    // FIXED: Aligned action to match the new package architecture
                     action = "com.zurl.app.ACTION_OPEN_URL"
                     putExtra("EXTRA_URL", url)
                     data = Uri.parse("study://threecell/$appWidgetId")
@@ -73,6 +83,7 @@ class ThreeCellWidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             prefs.remove("widget_title_$appWidgetId")
             prefs.remove("widget_url_$appWidgetId")
+            prefs.remove("widget_custom_color_$appWidgetId") // Safe cleanup on removal
         }
         prefs.apply()
     }

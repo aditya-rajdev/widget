@@ -20,7 +20,6 @@ class OneCellWidgetProvider : AppWidgetProvider() {
             val customImg = prefs.getString("widget_img_$appWidgetId", "") ?: ""
             val lowerUrl = url.lowercase()
 
-            
             if (title == null) {
                 continue
             }
@@ -49,24 +48,34 @@ class OneCellWidgetProvider : AppWidgetProvider() {
                     else -> R.drawable.link
                 }
 
-                val bgColor = when {
-                    lowerUrl.contains("youtube") || lowerUrl.contains("youtu.be") -> android.graphics.Color.parseColor("#de0000")
-                    lowerUrl.contains("github") -> android.graphics.Color.parseColor("#000000")
-                    lowerUrl.contains("linkedin") -> android.graphics.Color.parseColor("#006de1")
-                    lowerUrl.contains("leetcode") -> android.graphics.Color.parseColor("#ec9c08")
-                    lowerUrl.contains("instagram") -> android.graphics.Color.parseColor("#df088d")
-                    else -> android.graphics.Color.parseColor("#1A1A1A")
+                // 🚨 INTEGRATED: Custom Color Picker Check with Fallback System for 1x1 Tile
+                val customColorStr = prefs.getString("widget_custom_color_$appWidgetId", null)
+
+                val bgColor = if (!customColorStr.isNullOrBlank()) {
+                    // User ne setting screen se manual aesthetics select kiya hai (e.g. Matte Black)
+                    android.graphics.Color.parseColor(customColorStr)
+                } else {
+                    // FALLBACK: Default branding logic agar user "Auto" mode par hai
+                    when {
+                        lowerUrl.contains("youtube") || lowerUrl.contains("youtu.be") -> android.graphics.Color.parseColor("#de0000")
+                        lowerUrl.contains("github") -> android.graphics.Color.parseColor("#000000")
+                        lowerUrl.contains("linkedin") -> android.graphics.Color.parseColor("#006de1")
+                        lowerUrl.contains("leetcode") -> android.graphics.Color.parseColor("#ec9c08")
+                        lowerUrl.contains("instagram") -> android.graphics.Color.parseColor("#df088d")
+                        else -> android.graphics.Color.parseColor("#1A1A1A")
+                    }
                 }
 
                 views.setImageViewResource(R.id.oneCellWidgetIcon, iconRes)
                 views.setInt(R.id.oneCellWidgetIcon, "setBackgroundColor", android.graphics.Color.TRANSPARENT)
+                
+                // Layout core background setting apply block using static root container
                 views.setInt(R.id.oneCellWidgetRoot, "setBackgroundColor", bgColor)
             }
 
             // Click handling pending intent mapping
             if (url.isNotBlank()) {
                 val clickIntent = Intent(context, LinkClickReceiver::class.java).apply {
-                    // FIXED: Aligned intent filters action to sync with new package architecture
                     action = "com.zurl.app.ACTION_OPEN_URL"
                     putExtra("EXTRA_URL", url)
                     data = Uri.parse("study://onecell/$appWidgetId")
@@ -91,6 +100,7 @@ class OneCellWidgetProvider : AppWidgetProvider() {
             prefs.remove("widget_title_$appWidgetId")
             prefs.remove("widget_url_$appWidgetId")
             prefs.remove("widget_img_$appWidgetId")
+            prefs.remove("widget_custom_color_$appWidgetId") // Safe cleanup on removal
         }
         prefs.apply()
     }
